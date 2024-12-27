@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Tencent Captcha SDK ProGuard rules
+-keep class com.**.TNative$aa { public *; }
+-keep class com.**.TNative$aa$bb { public *; }
+-keep class com.**.TNative$bb { *; }
+-keep class com.**.TNative$bb$I { *; }

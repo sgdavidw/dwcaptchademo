@@ -1,11 +1,12 @@
 # Android Login App with JWT Authentication
 
-A modern Android application demonstrating secure user authentication using JWT tokens, following Material Design guidelines and MVVM architecture.
+A modern Android application demonstrating secure user authentication using JWT tokens and Tencent Captcha verification, following Material Design guidelines and MVVM architecture.
 
 ## Features
 
 - User Registration
 - User Login with JWT Authentication
+- Tencent Captcha Integration for Login Security
 - Secure Token Storage using EncryptedSharedPreferences
 - Profile View
 - Auto-login if valid token exists
@@ -20,7 +21,9 @@ A modern Android application demonstrating secure user authentication using JWT 
 - **Minimum SDK**: 28 (Android 9.0)
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **Network**: Retrofit2 with OkHttp3
-- **Security**: EncryptedSharedPreferences
+- **Security**: 
+  - EncryptedSharedPreferences
+  - Tencent Captcha SDK
 - **UI**: Material Design Components
 - **Async Operations**: Kotlin Coroutines
 - **Data Binding**: ViewBinding
@@ -51,6 +54,7 @@ app/src/main/java/com/example/dwcaptchademo/
 - Android Studio Arctic Fox or later
 - JDK 8 or later
 - Android SDK with minimum API level 28
+- Tencent Captcha App ID (obtain from Tencent Cloud Console)
 
 ## Setup Instructions
 
@@ -66,7 +70,14 @@ app/src/main/java/com/example/dwcaptchademo/
    private const val BASE_URL = "http://10.0.2.2:3001"  # Change this to your backend URL
    ```
 
-4. Build and run the project:
+4. Configure Tencent Captcha:
+   - Open `LoginActivity.kt`
+   - Replace `"YourCaptchaAppId"` with your actual Tencent Captcha App ID:
+     ```kotlin
+     .setCaptchaAppid("YourCaptchaAppId")
+     ```
+
+5. Build and run the project:
    - Click "Run" in Android Studio, or
    - Run using Gradle:
      ```bash
@@ -132,7 +143,12 @@ The app communicates with the following endpoints:
    - Automatic token cleanup on logout
    - Token expiration handling
 
-3. **Input Validation**:
+3. **Captcha Verification**:
+   - Tencent Captcha integration
+   - Bot prevention
+   - Human verification before login
+
+4. **Input Validation**:
    - Email format validation
    - Password strength validation
    - Empty field validation
