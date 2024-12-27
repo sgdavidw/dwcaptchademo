@@ -5,13 +5,17 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.webkit.WebView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.dwcaptchademo.R
 import com.example.dwcaptchademo.databinding.ActivityLoginBinding
 import com.example.dwcaptchademo.utils.Resource
+import com.example.dwcaptchademo.utils.ITencentCaptchaPrivacyPolicy
+import com.example.dwcaptchademo.utils.ICaptchaDeviceInfoProvider
 import com.example.dwcaptchademo.viewmodels.LoginViewModel
 import com.tencent.captcha.sdk.*
+import org.json.JSONObject
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -84,7 +88,7 @@ class LoginActivity : AppCompatActivity() {
 
         // Define the CAPTCHA callback
         val captchaCallback = object : TencentCaptchaCallback {
-            override fun finish(ret: RetCode, resultObject: org.json.JSONObject?) {
+            override fun finish(ret: RetCode, resultObject: JSONObject?) {
                 if (ret == RetCode.OK) {
                     Log.d("TencentCaptcha", "CAPTCHA passed successfully.")
                     viewModel.login(email, password) // Proceed with login
