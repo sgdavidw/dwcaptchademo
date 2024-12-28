@@ -53,24 +53,7 @@ Add these rules to `proguard-rules.pro`:
 -keep class com.**.TNative$bb$I { *; }
 ```
 
-## Step 4: Create Interface Implementations
-
-Create a file `CaptchaInterfaces.kt`:
-```kotlin
-package com.example.dwcaptchademo.utils
-
-import com.tencent.captcha.sdk.TencentCaptchaConfig
-
-interface ITencentCaptchaPrivacyPolicy : TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy {
-    override fun userAgreement(): Boolean
-}
-
-interface ICaptchaDeviceInfoProvider : TencentCaptchaConfig.ICaptchaDeviceInfoProvider {
-    override fun getAndroidId(): String
-}
-```
-
-## Step 5: Add WebView to Login Layout
+## Step 4: Add WebView to Login Layout
 
 Add WebView to your login layout (`activity_login.xml`):
 ```xml
@@ -83,7 +66,7 @@ Add WebView to your login layout (`activity_login.xml`):
     app:layout_constraintBottom_toTopOf="@id/errorText" />
 ```
 
-## Step 6: Implement CAPTCHA in LoginActivity
+## Step 5: Implement CAPTCHA in LoginActivity
 
 1. Setup WebView:
 ```kotlin
@@ -102,81 +85,86 @@ private fun setupWebView() {
 }
 ```
 
-2. Initialize CAPTCHA SDK:
+2. Initialize CAPTCHA SDK using the provided interfaces:
 ```kotlin
 private fun setupCaptcha() {
-    val privacyPolicy = object : ITencentCaptchaPrivacyPolicy {
-        override fun userAgreement(): Boolean = true
-    }
-
-    val deviceInfoProvider = object : ICaptchaDeviceInfoProvider {
-        override fun getAndroidId(): String {
-            return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+    try {
+        // Define the privacy policy implementation
+        val privacyPolicy = object : TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy {
+            override fun userAgreement(): Boolean = true
         }
-    }
 
-    val configBuilder = TencentCaptchaConfig.Builder(applicationContext, privacyPolicy, deviceInfoProvider)
-    TencentCaptcha.init(configBuilder.build())
+        // Define the device info provider implementation
+        val deviceInfoProvider = object : TencentCaptchaConfig.ICaptchaDeviceInfoProvider {
+            override fun getAndroidId(): String {
+                return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            }
+        }
+
+        // Initialize the CAPTCHA SDK
+        val configBuilder = TencentCaptchaConfig.Builder(applicationContext, privacyPolicy, deviceInfoProvider)
+        val ret = TencentCaptcha.init(configBuilder.build())
+        if (ret != RetCode.OK) {
+            Log.e(TAG, "Initialization failed: ${ret.code}, ${ret.msg}")
+            return
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Error setting up CAPTCHA: ${e.message}", e)
+    }
 }
 ```
 
 3. Implement CAPTCHA verification:
 ```kotlin
 private fun startCaptchaVerification(email: String, password: String) {
-    val captchaWebView = binding.root.findViewById<WebView>(R.id.tcaptchaWebview)
-    captchaWebView.visibility = View.VISIBLE
+    try {
+        val captchaWebView = binding.root.findViewById<WebView>(R.id.tcaptchaWebview)
+        captchaWebView.visibility = View.VISIBLE
 
-    val captchaParamBuilder = TencentCaptchaParam.Builder()
-        .setWebView(captchaWebView)
-        .setCaptchaAppid("YOUR_CAPTCHA_APP_ID")
+        val captchaParamBuilder = TencentCaptchaParam.Builder()
+            .setWebView(captchaWebView)
+            .setCaptchaAppid("YOUR_CAPTCHA_APP_ID")
 
-    val captchaCallback = object : TencentCaptchaCallback {
-        override fun finish(ret: RetCode, resultObject: JSONObject?) {
-            runOnUiThread {
-                captchaWebView.visibility = View.GONE
-                if (ret == RetCode.OK) {
-                    viewModel.login(email, password)
-                } else {
-                    showError("CAPTCHA verification failed")
+        val captchaCallback = object : TencentCaptchaCallback {
+            override fun finish(ret: RetCode, resultObject: JSONObject?) {
+                runOnUiThread {
+                    captchaWebView.visibility = View.GONE
+                    if (ret == RetCode.OK) {
+                        viewModel.login(email, password)
+                    } else {
+                        showError("CAPTCHA verification failed")
+                    }
+                }
+            }
+
+            override fun exception(t: Throwable) {
+                runOnUiThread {
+                    captchaWebView.visibility = View.GONE
+                    showError("CAPTCHA verification error")
                 }
             }
         }
 
-        override fun exception(t: Throwable) {
-            runOnUiThread {
-                captchaWebView.visibility = View.GONE
-                showError("CAPTCHA verification error")
-            }
-        }
+        TencentCaptcha.start(captchaCallback, captchaParamBuilder.build())
+    } catch (e: Exception) {
+        Log.e(TAG, "Error starting CAPTCHA", e)
     }
-
-    TencentCaptcha.start(captchaCallback, captchaParamBuilder.build())
-}
-```
-
-## Step 7: Trigger CAPTCHA Before Login
-
-Modify your login button click listener:
-```kotlin
-binding.loginButton.setOnClickListener {
-    val email = binding.emailInput.text.toString()
-    val password = binding.passwordInput.text.toString()
-
-    if (email.isBlank() || password.isBlank()) {
-        showError("Please enter email and password")
-        return@setOnClickListener
-    }
-
-    startCaptchaVerification(email, password)
 }
 ```
 
 ## Important Notes
 
-1. **WebView Settings**: Ensure all required WebView settings are enabled for proper CAPTCHA functionality.
-2. **UI Thread**: Always update UI elements on the main thread using `runOnUiThread`.
-3. **Error Handling**: Implement proper error handling and user feedback.
-4. **Testing**: Test the CAPTCHA implementation thoroughly with different network conditions.
+1. **Interface Usage**: The SDK provides the necessary interfaces:
+   - `TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy`
+   - `TencentCaptchaConfig.ICaptchaDeviceInfoProvider`
+
+2. **WebView Settings**: Ensure all required WebView settings are enabled for proper CAPTCHA functionality.
+
+3. **UI Thread**: Always update UI elements on the main thread using `runOnUiThread`.
+
+4. **Error Handling**: Implement proper error handling and user feedback.
+
+5. **Testing**: Test the CAPTCHA implementation thoroughly with different network conditions.
 
 ## Troubleshooting
 
