@@ -13,8 +13,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.dwcaptchademo.R
 import com.example.dwcaptchademo.databinding.ActivityLoginBinding
 import com.example.dwcaptchademo.utils.Resource
-import com.example.dwcaptchademo.utils.ITencentCaptchaPrivacyPolicy
-import com.example.dwcaptchademo.utils.ICaptchaDeviceInfoProvider
 import com.example.dwcaptchademo.viewmodels.LoginViewModel
 import com.tencent.captcha.sdk.*
 import org.json.JSONObject
@@ -59,7 +57,7 @@ class LoginActivity : AppCompatActivity() {
     private fun setupCaptcha() {
         try {
             // Define the privacy policy implementation
-            val privacyPolicy = object : ITencentCaptchaPrivacyPolicy {
+            val privacyPolicy = object : TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy {
                 override fun userAgreement(): Boolean {
                     Log.d(TAG, "Privacy policy check called")
                     return true
@@ -67,7 +65,7 @@ class LoginActivity : AppCompatActivity() {
             }
 
             // Define the device info provider implementation
-            val deviceInfoProvider = object : ICaptchaDeviceInfoProvider {
+            val deviceInfoProvider = object : TencentCaptchaConfig.ICaptchaDeviceInfoProvider {
                 override fun getAndroidId(): String {
                     val androidId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
                     Log.d(TAG, "Device ID provided: $androidId")
