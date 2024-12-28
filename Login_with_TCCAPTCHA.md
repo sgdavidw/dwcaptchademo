@@ -91,7 +91,14 @@ private fun setupCaptcha() {
     try {
         // Define the privacy policy implementation
         val privacyPolicy = object : TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy {
-            override fun userAgreement(): Boolean = true
+            override fun userAgreement(): Boolean {
+                // IMPORTANT: In a production environment, you should implement proper privacy policy checks
+                // Return values:
+                // - true: User has agreed to the privacy policy, SDK will work normally
+                // - false: User has not agreed to the privacy policy, SDK integration will be blocked
+                // Note: Returning true here is only for demonstration purposes
+                return true
+            }
         }
 
         // Define the device info provider implementation
@@ -156,15 +163,26 @@ private fun startCaptchaVerification(email: String, password: String) {
 
 1. **Interface Usage**: The SDK provides the necessary interfaces:
    - `TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy`
+     - The `userAgreement()` function must return `true` for the SDK to work
+     - In production, implement proper privacy policy checks before returning `true`
+     - Returning `false` will prevent SDK integration
    - `TencentCaptchaConfig.ICaptchaDeviceInfoProvider`
 
-2. **WebView Settings**: Ensure all required WebView settings are enabled for proper CAPTCHA functionality.
+2. **Privacy Policy Implementation**:
+   - The demo returns `true` for simplicity
+   - In a real application, you should:
+     - Show your privacy policy to users
+     - Get explicit user consent
+     - Store user's privacy preferences
+     - Return the actual user agreement status
 
-3. **UI Thread**: Always update UI elements on the main thread using `runOnUiThread`.
+3. **WebView Settings**: Ensure all required WebView settings are enabled for proper CAPTCHA functionality.
 
-4. **Error Handling**: Implement proper error handling and user feedback.
+4. **UI Thread**: Always update UI elements on the main thread using `runOnUiThread`.
 
-5. **Testing**: Test the CAPTCHA implementation thoroughly with different network conditions.
+5. **Error Handling**: Implement proper error handling and user feedback.
+
+6. **Testing**: Test the CAPTCHA implementation thoroughly with different network conditions.
 
 ## Troubleshooting
 
@@ -172,17 +190,20 @@ private fun startCaptchaVerification(email: String, password: String) {
    - Check WebView settings
    - Verify internet connectivity
    - Check logcat for initialization errors
+   - Verify privacy policy agreement is returning `true`
 
 2. **Initialization Failures**:
    - Verify App ID is correct
    - Check internet permissions
    - Verify AAR file is properly included
+   - Check privacy policy implementation
 
 3. **Common Issues**:
    - WebView JavaScript disabled
    - Missing internet permission
    - Incorrect thread handling
    - Missing ProGuard rules
+   - Privacy policy returning `false`
 
 ## References
 
