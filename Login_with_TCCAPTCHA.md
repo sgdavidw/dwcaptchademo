@@ -208,5 +208,5 @@ private fun startCaptchaVerification(email: String, password: String) {
 ## References
 
 - [Tencent Cloud CAPTCHA Android Client SDK Integration Documentation](https://www.tencentcloud.com/document/product/1159/67265)
-- [Tencent Cloud CAPTCHA SDK Download](https://www.tencentcloud.com/document/product/1159/67267)
+- [Tencent Cloud CAPTCHA SDK Documentation](https://www.tencentcloud.com/document/product/1159/67265?lang=en&pg=)
 - [Android WebView Documentation](https://developer.android.com/reference/android/webkit/WebView) 
