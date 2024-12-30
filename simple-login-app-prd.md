@@ -1,163 +1,109 @@
-# Product Requirements Document: Android Login App
+# Simple Login App with JWT Authentication and CAPTCHA
 
-**Project Name**: Simple Login App  
-**Document Version**: 1.0  
-**Date**: 2024-12-27  
+A modern Android application demonstrating secure user authentication using JWT tokens and Tencent Captcha verification, following Material Design guidelines and MVVM architecture.
 
-## 1. Overview
+## Features
 
-This document outlines the requirements for implementing user authentication features in an Android native application. The app will communicate with a backend server to handle user registration, login, profile viewing, and logout functionality.
+- User Registration
+- User Login with JWT Authentication
+- Tencent Captcha Integration for Login Security
+  - Slide verification
+  - Popup mode display
+  - Multi-language support
+  - Dark mode support
+- Secure Token Storage using EncryptedSharedPreferences
+- Profile View
+- Auto-login if valid token exists
+- Logout functionality
+- Input validation
+- Error handling
+- Loading state indicators
 
-## 2. Current Project Structure
+## Technical Stack
 
-```
-dwcaptchademo/
-├── app
-│   ├── build
-│   ├── build.gradle.kts
-│   ├── proguard-rules.pro
-│   └── src
-├── build.gradle.kts
-├── gradle
-│   ├── libs.versions.toml
-│   └── wrapper
-├── gradle.properties
-├── gradlew
-├── gradlew.bat
-├── local.properties
-└── settings.gradle.kts
-```
+- **Language**: Kotlin
+- **Minimum SDK**: 28 (Android 9.0)
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Network**: Retrofit2 with OkHttp3
+- **Security**: 
+  - EncryptedSharedPreferences
+  - Tencent Captcha SDK
+- **UI**: Material Design Components
+- **Async Operations**: Kotlin Coroutines
+- **Data Binding**: ViewBinding
 
-## 3. Technical Specifications
+## Project Structure
 
-### 3.1 Backend API Endpoints
-
-**Base URL**: `http://10.0.2.2:3001`
-
-#### Register
-- **Endpoint**: `/auth/register`
-- **Method**: POST
-- **Headers**: `Content-Type: application/json`
-- **Request Body**:
-```json
-{
-    "email": "test@example.com",
-    "password": "password123",
-    "name": "Test User"
-}
-```
-- **Success Response**: 200 OK
-
-#### Login
-- **Endpoint**: `/auth/login`
-- **Method**: POST
-- **Headers**: `Content-Type: application/json`
-- **Request Body**:
-```json
-{
-    "email": "test@example.com",
-    "password": "password123"
-}
-```
-- **Success Response**:
-```json
-{
-    "access_token": "jwt.token.here"
-}
-```
-
-#### Get Profile
-- **Endpoint**: `/auth/profile`
-- **Method**: GET
-- **Headers**: 
-  - `Content-Type: application/json`
-  - `Authorization: Bearer {jwt_token}`
-- **Success Response**:
-```json
-{
-    "id": 1,
-    "email": "test@example.com",
-    "name": "Test User"
-}
-```
-
-## 4. Functional Requirements
-
-### 4.1 Activities/Screens
-1. **Login Screen** (`LoginActivity`)
-   - Email input field
-   - Password input field
-   - Login button
-   - Register button (navigates to Register screen)
-   - Error message display area
-
-2. **Register Screen** (`RegisterActivity`)
-   - Name input field
-   - Email input field
-   - Password input field
-   - Register button
-   - Back to Login button
-   - Error message display area
-
-3. **Profile Screen** (`ProfileActivity`)
-   - Display user name
-   - Display user email
-   - Logout button
-   - Error message display area
-
-### 4.2 Data Management
-1. **Token Storage**
-   - Store JWT token securely using `EncryptedSharedPreferences`
-   - Clear token on logout
-
-2. **User Session**
-   - Maintain user session using stored JWT token
-   - Auto-redirect to Login if token is invalid/expired
-
-## 5. Implementation Requirements
-
-### 5.1 Dependencies
-Add to `app/build.gradle.kts`:
-```kotlin
-dependencies {
-    // Retrofit for API calls
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    
-    // Security
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    
-    // ViewModel and LiveData
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
-}
-```
-
-### 5.2 Package Structure
 ```
 app/src/main/java/com/example/dwcaptchademo/
 ├── api/
-│   ├── AuthApi.kt
-│   └── RetrofitClient.kt
+│   ├── AuthApi.kt            # API interface definitions
+│   └── RetrofitClient.kt     # Network client setup
 ├── models/
-│   ├── LoginRequest.kt
+│   ├── LoginRequest.kt       # Login request with CAPTCHA ticket
 │   ├── RegisterRequest.kt
 │   ├── LoginResponse.kt
 │   └── UserProfile.kt
 ├── viewmodels/
-│   ├── LoginViewModel.kt
+│   ├── LoginViewModel.kt     # Login logic with CAPTCHA
 │   ├── RegisterViewModel.kt
 │   └── ProfileViewModel.kt
 ├── utils/
-│   ├── TokenManager.kt
-│   └── NetworkUtils.kt
+│   ├── TokenManager.kt       # JWT token management
+│   └── NetworkUtils.kt       # Network utilities
 └── ui/
-    ├── LoginActivity.kt
+    ├── LoginActivity.kt      # Login UI with CAPTCHA
     ├── RegisterActivity.kt
     └── ProfileActivity.kt
 ```
 
-## 6. Security Requirements
+## API Endpoints
+
+### Register
+- **Endpoint**: `/auth/register`
+- **Method**: POST
+- **Body**:
+  ```json
+  {
+      "email": "test@example.com",
+      "password": "password123",
+      "name": "Test User"
+  }
+  ```
+
+### Login
+- **Endpoint**: `/auth/login`
+- **Method**: POST
+- **Body**:
+  ```json
+  {
+      "email": "test@example.com",
+      "password": "password123",
+      "captcha_ticket": "CAPTCHA_VERIFICATION_TICKET"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+      "access_token": "jwt.token.here"
+  }
+  ```
+
+### Get Profile
+- **Endpoint**: `/auth/profile`
+- **Method**: GET
+- **Headers**: 
+  - `Authorization: Bearer {jwt_token}`
+- **Response**:
+  ```json
+  {
+      "id": 1,
+      "email": "test@example.com",
+      "name": "Test User"
+  }
+  ```
+
+## Security Features
 
 1. Password Requirements
    - Minimum 8 characters
@@ -169,12 +115,18 @@ app/src/main/java/com/example/dwcaptchademo/
    - Clear on logout
    - Handle token expiration
 
-3. Input Validation
+3. CAPTCHA Security
+   - Tencent CAPTCHA integration
+   - Slide verification
+   - Ticket validation
+   - Privacy policy compliance
+
+4. Input Validation
    - Email format validation
    - Password strength validation
    - Empty field validation
 
-## 7. Error Handling
+## Error Handling
 
 1. Network Errors
    - Display user-friendly error messages
@@ -185,48 +137,58 @@ app/src/main/java/com/example/dwcaptchademo/
    - Show inline validation errors
    - Display server-side validation errors
 
-3. Authentication Errors
-   - Handle invalid credentials
-   - Handle expired tokens
-   - Handle network failures
+3. CAPTCHA Errors
+   - Handle verification failures
+   - Show retry options
+   - Log error details
 
-## 8. Testing Requirements
+## Development Environment
+
+1. Android Studio Arctic Fox or later
+2. Gradle 7.0+
+3. Kotlin 1.5+
+4. Minimum SDK: API 28
+5. Target SDK: API 34
+
+## Build Instructions
+
+1. Clone the repository
+2. Open in Android Studio
+3. Configure Tencent CAPTCHA:
+   - Add AAR file to `app/libs`
+   - Set your CAPTCHA App ID in `LoginActivity.kt`
+4. Build and run
+
+## Testing
 
 1. Unit Tests
-   - ViewModels
-   - API calls
-   - Token management
+   - ViewModel tests
+   - Repository tests
+   - Utility tests
 
-2. UI Tests
-   - Input validation
-   - Navigation flow
-   - Error states
+2. Integration Tests
+   - API integration tests
+   - CAPTCHA verification tests
+   - Token management tests
 
-3. Integration Tests
-   - Full authentication flow
-   - Token persistence
-   - Session management
+3. UI Tests
+   - Login flow tests
+   - Registration flow tests
+   - CAPTCHA interaction tests
 
-## 9. Success Criteria
+## Production Considerations
 
-1. Users can successfully register with email and password
-2. Users can login and receive a valid JWT token
-3. Users can view their profile information
-4. Users can logout and clear their session
-5. All error cases are properly handled and displayed
-6. JWT token is securely stored and managed
+1. Security
+   - Implement proper privacy policy checks
+   - Secure token storage
+   - CAPTCHA ticket validation
 
-## 10. Next Steps
+2. Performance
+   - Optimize WebView loading
+   - Handle network conditions
+   - Manage memory usage
 
-1. Set up project dependencies
-2. Implement network layer with Retrofit
-3. Create UI layouts for all screens
-4. Implement ViewModels and LiveData
-5. Add token management
-6. Implement error handling
-7. Add unit tests
-8. Perform integration testing
-
-## Document Version History
-
-- v1.0: Initial PRD for simple login app implementation
+3. User Experience
+   - Clear error messages
+   - Loading indicators
+   - Smooth CAPTCHA integration

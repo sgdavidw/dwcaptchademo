@@ -60,15 +60,15 @@ Add WebView to your login layout (`activity_login.xml`):
 <WebView
     android:id="@+id/tcaptchaWebview"
     android:layout_width="match_parent"
-    android:layout_height="0dp"
+    android:layout_height="200dp"
+    android:layout_marginTop="8dp"
     android:visibility="gone"
-    app:layout_constraintTop_toBottomOf="@id/registerButton"
-    app:layout_constraintBottom_toTopOf="@id/errorText" />
+    app:layout_constraintTop_toBottomOf="@id/loginButton" />
 ```
 
 ## Step 5: Implement CAPTCHA in LoginActivity
 
-1. Setup WebView:
+1. Setup WebView with required settings:
 ```kotlin
 private fun setupWebView() {
     val webView = binding.root.findViewById<WebView>(R.id.tcaptchaWebview)
@@ -80,133 +80,121 @@ private fun setupWebView() {
         databaseEnabled = true
         setGeolocationEnabled(true)
         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        javaScriptCanOpenWindowsAutomatically = true
+        setSupportMultipleWindows(true)
+        cacheMode = WebSettings.LOAD_NO_CACHE
+        mediaPlaybackRequiresUserGesture = false
+        useWideViewPort = true
+        loadWithOverviewMode = true
     }
-    webView.webViewClient = WebViewClient()
+    WebView.setWebContentsDebuggingEnabled(true)  // Enable for debugging
 }
 ```
 
-2. Initialize CAPTCHA SDK using the provided interfaces:
+2. Initialize CAPTCHA SDK:
 ```kotlin
 private fun setupCaptcha() {
-    try {
-        // Define the privacy policy implementation
-        val privacyPolicy = object : TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy {
-            override fun userAgreement(): Boolean {
-                // IMPORTANT: In a production environment, you should implement proper privacy policy checks
-                // Return values:
-                // - true: User has agreed to the privacy policy, SDK will work normally
-                // - false: User has not agreed to the privacy policy, SDK integration will be blocked
-                // Note: Returning true here is only for demonstration purposes
-                return true
-            }
+    val privacyPolicy = object : TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy {
+        override fun userAgreement(): Boolean {
+            // IMPORTANT: In production, implement proper privacy policy checks
+            // Return true if user agreed to privacy policy, false otherwise
+            return true  // Demo implementation
         }
-
-        // Define the device info provider implementation
-        val deviceInfoProvider = object : TencentCaptchaConfig.ICaptchaDeviceInfoProvider {
-            override fun getAndroidId(): String {
-                return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-            }
-        }
-
-        // Initialize the CAPTCHA SDK
-        val configBuilder = TencentCaptchaConfig.Builder(applicationContext, privacyPolicy, deviceInfoProvider)
-        val ret = TencentCaptcha.init(configBuilder.build())
-        if (ret != RetCode.OK) {
-            Log.e(TAG, "Initialization failed: ${ret.code}, ${ret.msg}")
-            return
-        }
-    } catch (e: Exception) {
-        Log.e(TAG, "Error setting up CAPTCHA: ${e.message}", e)
     }
+
+    val deviceInfoProvider = object : TencentCaptchaConfig.ICaptchaDeviceInfoProvider {
+        override fun getAndroidId(): String {
+            return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        }
+    }
+
+    val configBuilder = TencentCaptchaConfig.Builder(applicationContext, privacyPolicy, deviceInfoProvider)
+    TencentCaptcha.init(configBuilder.build())
 }
 ```
 
 3. Implement CAPTCHA verification:
 ```kotlin
 private fun startCaptchaVerification(email: String, password: String) {
-    try {
-        val captchaWebView = binding.root.findViewById<WebView>(R.id.tcaptchaWebview)
-        captchaWebView.visibility = View.VISIBLE
+    val captchaWebView = binding.root.findViewById<WebView>(R.id.tcaptchaWebview)
+    captchaWebView.visibility = View.VISIBLE
 
-        val captchaParamBuilder = TencentCaptchaParam.Builder()
-            .setWebView(captchaWebView)
-            .setCaptchaAppid("YOUR_CAPTCHA_APP_ID")
+    val captchaParamBuilder = TencentCaptchaParam.Builder()
+        .setWebView(captchaWebView)
+        .setCaptchaAppid("YOUR_CAPTCHA_APP_ID")
+        .setType("popup")
+        .setEnableDarkMode(false)
+        .setLoading(true)
+        .setUserLanguage("en")
+        .setNeedFeedBack(true)
+        .setEnableAged(true)
 
-        val captchaCallback = object : TencentCaptchaCallback {
-            override fun finish(ret: RetCode, resultObject: JSONObject?) {
-                runOnUiThread {
-                    captchaWebView.visibility = View.GONE
-                    if (ret == RetCode.OK) {
-                        viewModel.login(email, password)
-                    } else {
-                        showError("CAPTCHA verification failed")
-                    }
-                }
-            }
-
-            override fun exception(t: Throwable) {
-                runOnUiThread {
-                    captchaWebView.visibility = View.GONE
-                    showError("CAPTCHA verification error")
-                }
+    val captchaCallback = object : TencentCaptchaCallback {
+        override fun finish(ret: RetCode, resultObject: JSONObject?) {
+            if (ret == RetCode.OK && resultObject?.has("ticket") == true) {
+                val ticket = resultObject.getString("ticket")
+                viewModel.login(email, password, ticket)
             }
         }
-
-        TencentCaptcha.start(captchaCallback, captchaParamBuilder.build())
-    } catch (e: Exception) {
-        Log.e(TAG, "Error starting CAPTCHA", e)
     }
+
+    TencentCaptcha.start(captchaCallback, captchaParamBuilder.build())
 }
 ```
 
 ## Important Notes
 
-1. **Interface Usage**: The SDK provides the necessary interfaces:
-   - `TencentCaptchaConfig.ITencentCaptchaPrivacyPolicy`
-     - The `userAgreement()` function must return `true` for the SDK to work
-     - In production, implement proper privacy policy checks before returning `true`
-     - Returning `false` will prevent SDK integration
-   - `TencentCaptchaConfig.ICaptchaDeviceInfoProvider`
-
-2. **Privacy Policy Implementation**:
-   - The demo returns `true` for simplicity
-   - In a real application, you should:
+1. **Privacy Policy Implementation**:
+   - The `userAgreement()` function in `ITencentCaptchaPrivacyPolicy`:
+     - Return `true` if the user has agreed to the privacy policy
+     - Return `false` if the user has not agreed
+     - SDK will only work when `true` is returned
+   - In production:
      - Show your privacy policy to users
      - Get explicit user consent
      - Store user's privacy preferences
-     - Return the actual user agreement status
+     - Return the actual agreement status
 
-3. **WebView Settings**: Ensure all required WebView settings are enabled for proper CAPTCHA functionality.
+2. **WebView Settings**:
+   - Enable JavaScript and DOM storage
+   - Allow file and content access
+   - Enable database and geolocation
+   - Configure for popup display
 
-4. **UI Thread**: Always update UI elements on the main thread using `runOnUiThread`.
+3. **Error Handling**:
+   - Implement proper error handling
+   - Log CAPTCHA events for debugging
+   - Show user-friendly error messages
 
-5. **Error Handling**: Implement proper error handling and user feedback.
+4. **UI Thread**:
+   - Update UI elements on the main thread
+   - Use `runOnUiThread` for WebView visibility changes
 
-6. **Testing**: Test the CAPTCHA implementation thoroughly with different network conditions.
+5. **Testing**:
+   - Test with different network conditions
+   - Verify CAPTCHA behavior in various scenarios
+   - Check error handling and user feedback
 
 ## Troubleshooting
 
 1. **CAPTCHA Not Showing**:
-   - Check WebView settings
-   - Verify internet connectivity
+   - Verify WebView settings
+   - Check internet connectivity
+   - Confirm privacy policy returns `true`
    - Check logcat for initialization errors
-   - Verify privacy policy agreement is returning `true`
 
 2. **Initialization Failures**:
    - Verify App ID is correct
    - Check internet permissions
    - Verify AAR file is properly included
-   - Check privacy policy implementation
 
 3. **Common Issues**:
    - WebView JavaScript disabled
    - Missing internet permission
    - Incorrect thread handling
    - Missing ProGuard rules
-   - Privacy policy returning `false`
 
 ## References
 
-- [Tencent Cloud CAPTCHA Android Client SDK Integration Documentation](https://www.tencentcloud.com/document/product/1159/67265)
-- [Tencent Cloud CAPTCHA SDK Documentation](https://www.tencentcloud.com/document/product/1159/67265?lang=en&pg=)
+- [Tencent Cloud CAPTCHA Documentation](https://www.tencentcloud.com/document/product/1159/67265?lang=en&pg=)
 - [Android WebView Documentation](https://developer.android.com/reference/android/webkit/WebView) 
