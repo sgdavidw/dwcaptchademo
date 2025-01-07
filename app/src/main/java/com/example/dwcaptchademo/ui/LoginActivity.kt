@@ -211,12 +211,14 @@ class LoginActivity : AppCompatActivity() {
                     // Add a delay before processing the result
                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                         runOnUiThread {
-                            if (ret == RetCode.OK && resultObject?.has("ticket") == true) {
-                                Log.d(TAG, "CAPTCHA passed successfully with ticket")
+                            if (ret == RetCode.OK && resultObject?.has("ticket") == true && resultObject.has("randstr")) {
+                                Log.d(TAG, "CAPTCHA passed successfully with ticket and randstr")
                                 captchaWebView.visibility = View.GONE
-                                viewModel.login(email, password)
+                                val ticket = resultObject.getString("ticket")
+                                val randstr = resultObject.getString("randstr")
+                                viewModel.login(email, password, ticket, randstr)
                             } else {
-                                Log.e(TAG, "CAPTCHA failed or no ticket: ${ret.code}, ${ret.msg}")
+                                Log.e(TAG, "CAPTCHA failed or missing ticket/randstr: ${ret.code}, ${ret.msg}")
                                 showError("Please complete the verification")
                                 // Keep WebView visible for retry
                                 captchaWebView.visibility = View.VISIBLE

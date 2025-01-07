@@ -18,17 +18,18 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _loginResult = MutableLiveData<Resource<Unit>>()
     val loginResult: LiveData<Resource<Unit>> = _loginResult
 
-    fun login(email: String, password: String) {
-        val validationError = ValidationUtils.validateLoginInput(email, password)
-        if (validationError != null) {
-            _loginResult.value = Resource.Error(validationError)
-            return
-        }
+    fun login(email: String, password: String, captchaTicket: String, captchaRandStr: String) {
+        _loginResult.value = Resource.Loading
 
         viewModelScope.launch {
             _loginResult.value = Resource.Loading
             val response = safeApiCall {
-                RetrofitClient.authApi.login(LoginRequest(email, password))
+                RetrofitClient.authApi.login(LoginRequest(
+                    email = email,
+                    password = password,
+                    captchaTicket = captchaTicket,
+                    captchaRandStr = captchaRandStr
+                ))
             }
 
             when (response) {

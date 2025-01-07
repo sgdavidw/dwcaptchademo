@@ -5,7 +5,10 @@ import retrofit2.http.*
 
 data class LoginRequest(
     val email: String,
-    val password: String
+    val password: String,
+    val captchaTicket: String,
+    val captchaRandStr: String,
+    val platform: String = "android"
 )
 
 data class RegisterRequest(
